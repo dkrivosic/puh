@@ -1,7 +1,7 @@
 import Data.List
 
 type RomanNumeral = String
--- 1.a
+-- 1
 containsValidLetters :: RomanNumeral -> Bool
 containsValidLetters []     = True
 containsValidLetters (x:xs) = (elem x ['I', 'V', 'X', 'L', 'C', 'D', 'M']) && containsValidLetters xs
@@ -50,8 +50,74 @@ reducingValues xs = reducingValues' (digitValues xs)
         reducingValues' [_]      = True
         reducingValues' (x:y:xs) = (x >= y) && reducingValues'(y:xs)
 
+-- 1.a
 isValidRoman :: RomanNumeral -> Bool
 isValidRoman s = containsValidLetters s && correctRepetition s && correctOrdering s && reducingValues s
 
 -- 1.b
 toRoman :: Int -> RomanNumeral
+toRoman n = toRoman' n [] [(1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"),
+                        (50, "L"), (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")]
+  where toRoman' 0 s _ = s
+        toRoman' n s (x:xs)
+          | (n < 1) || (n > 3999) = error "Number cannot be represented"
+          | repeats > 0   = toRoman' rest (s ++ numerals) (x:xs)
+          | otherwise             = toRoman' n s xs
+          where repeats  = n `div` (fst x)
+                rest     = n `mod` (fst x)
+                numerals = concat $ replicate repeats (snd x)
+--1.c
+fromRoman :: RomanNumeral -> Int
+fromRoman xs
+  | isValidRoman xs = sum $ digitValues xs
+  | otherwise       = error "Not a valid Roman numeral"
+
+
+-- 2
+shortestDistance home pubs = shortestDistance' home home pubs
+  where dist (x1, y1) (x2, y2)                    = abs(x1 - x2) + abs(y1 - y2)
+        shortestDistance' home lastVisited []     = dist home lastVisited
+        shortestDistance' home lastVisited pubs   =
+          minimum [dist lastVisited pub + shortestDistance' home pub (delete pub pubs) | pub <- pubs]
+
+-- 3
+type Probability = Double
+type DiscreteRandVar = [(Int, Probability)]
+x :: DiscreteRandVar
+x = [(1, 0.2), (2, 0.4), (3, 0.1), (4, 0.2), (5, 0.05), (6, 0.05)]
+
+-- 3.a
+mean :: DiscreteRandVar -> Double
+mean []            = 0
+mean ((x, p) : xs) = fromIntegral(x) * p + mean xs
+
+mean' :: DiscreteRandVar -> Double
+mean' xs = mean'' xs 0
+  where mean'' [] m            = m
+        mean'' ((x, p) : xs) m = mean'' xs (fromIntegral(x) * p + m)
+
+-- 3.b
+variance :: DiscreteRandVar -> Double
+variance []          = 0
+variance xs = variance'' xs (mean' xs)
+  where variance'' [] _            = 0
+        variance'' ((x, p) : xs) m = p * (fromIntegral(x) - m) ^ 2 + variance'' xs m
+
+variance' :: DiscreteRandVar -> Double
+variance' xs = variance'' xs (mean' xs) 0
+  where variance'' [] _ v            = v
+        variance'' ((x, p) : xs) m v = variance'' xs m (v + p * (fromIntegral(x) - m) ^ 2)
+
+-- 3.c
+probabilityFilter :: Probability -> DiscreteRandVar -> [Int]
+probabilityFilter p [] = []
+probabilityFilter p ((x, px) : xs)
+  | px >= p   = x : probabilityFilter p xs
+  | otherwise = probabilityFilter p xs
+
+probabilityFilter' :: Probability -> DiscreteRandVar -> [Int]
+probabilityFilter' p xs = probabilityFilter'' p xs []
+  where probabilityFilter'' _ [] fs = reverse fs
+        probabilityFilter'' p ((x, px) : xs) fs
+          | px >= p   = probabilityFilter'' p xs (x : fs)
+          | otherwise = probabilityFilter'' p xs fs
