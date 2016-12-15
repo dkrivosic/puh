@@ -316,7 +316,7 @@ From 'Data.Function':
   filename :: String -> String
   filename "/etc/init/cron.conf" => "cron.conf"
 
-> --filename :: String -> String
+> filename :: String -> String
 > filename s = map snd $ dropWhile ((<=i) . fst) $ zip [0..] s
 >   where i = last $ findIndices (=='/') s
 
