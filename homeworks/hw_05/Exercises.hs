@@ -139,3 +139,95 @@ sumEven' = foldl (+) 0 . map snd . filter ((==0) . (`mod` 2) . fst) . zip [0..]
 maxUnzip :: [(Int,Int)] -> (Int,Int)
 maxUnzip xs = foldl maxPair (head xs) xs
   where maxPair (z1, z2) (x, y) = ((max z1 x), (max z2 y))
+
+-- == Lecture 9 ================================================================
+-- 1.1
+data Date = Date Int Int Int
+
+showDate :: Date -> String
+showDate (Date d m y) = show d ++ "." ++ show m ++ "." ++ show y
+
+-- 1.2
+data Point = Point Double Double
+  deriving Show
+data Shape2 = Circle2 Point Double | Rectangle2 Point Point
+  deriving Show
+
+translate :: Point -> Shape2 -> Shape2
+translate (Point dx dy) (Circle2 (Point x y) r) = Circle2 (Point (x + dx) (y + dy)) r
+translate (Point dx dy) (Rectangle2 (Point x1 y1) (Point x2 y2)) =
+  (Rectangle2 (Point (x1 + dx) (y1 + dy)) (Point (x2 + dx) (y2 + dy)))
+
+-- 1.3
+inShape :: Shape2 -> Point -> Bool
+inShape (Circle2 (Point p q) r) (Point x y) = (p - x)^2 + (q - y)^2 <= r^2
+inShape (Rectangle2 (Point x1 y1) (Point x2 y2)) (Point x y) =
+  (x >= x1) && (x <= x2) && (y >= y1) && (y <= y2)
+
+-- 1.4
+data Vehicle =
+    Car String Double
+  | Truck String Double
+  | Motorcycle String Double
+  | Bicycle
+
+totalHorsepower :: [Vehicle] -> Double
+totalHorsepower = sum . map hp
+  where hp (Car _ h)        = h
+        hp (Truck _ h)      = h
+        hp (Motorcycle _ h) = h
+        hp Bicycle          = 0.2
+
+-- 2.1
+data Level    = Bachelor | Master | PhD deriving (Show, Eq)
+
+data Student = Student
+ { firstName  :: String
+ , lastName   :: String
+ , studentId  :: String
+ , level      :: Level
+ , avgGrade   :: Double } deriving Show
+
+improveStudent :: Student -> Student
+improveStudent (Student fn ln sid lvl grade) = Student fn ln sid lvl (min 5.0 (grade + 1))
+
+-- 2.2
+avgGradePerLevels :: [Student] -> (Double, Double, Double)
+avgGradePerLevels s = (avg . map avgGrade $ filter ((==Bachelor) . level) s,
+                       avg . map avgGrade $ filter ((==Master) . level) s,
+                       avg . map avgGrade $ filter ((==PhD) . level) s)
+  where avg xs   = sum xs / fromIntegral (length xs)
+
+-- 2.3
+rankedStudents :: Level -> [Student] -> [String]
+rankedStudents lvl = map studentId . sortBy cmp . filter ((==lvl) . level)
+  where cmp x y = (avgGrade y) `compare` (avgGrade x)
+
+-- 2.4
+addStudent :: Student -> [Student] -> [Student]
+addStudent s xs
+  | or $ map ((studentId s ==) . studentId) xs = error "Student already exists in the list"
+  | otherwise                                  = s : xs
+
+-- 3.1
+data MyTriplet a b c = MyTriplet a b c
+
+toTriplet :: MyTriplet a b c -> (a, b, c)
+toTriplet (MyTriplet x y z) = (x, y, z)
+
+-- 3.2
+data Employee = Employee
+  { name   :: String
+  , salary :: Maybe Double } deriving Show
+
+totalSalaries :: [Employee] -> Double
+totalSalaries = sum . map sal
+  where sal e = case salary e of
+          Nothing -> 0
+          Just s  -> s
+
+-- 3.3
+addStudent2 :: Student -> [Student] -> Maybe [Student]
+addStudent2 s xs
+  | or $ map ((studentId s ==) . studentId) xs = Nothing
+  | otherwise                                  = Just (s : xs)
