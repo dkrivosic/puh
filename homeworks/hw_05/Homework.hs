@@ -45,6 +45,49 @@ turn dir (Turtle pos o)
 runTurtle :: [Turtle -> Turtle] -> Turtle -> Turtle
 runTurtle moves turtle = foldr (\f x -> f x) turtle (reverse moves)
 
+-- 2
+data Tree a = Leaf | Node a (Tree a) (Tree a) deriving (Eq, Show)
+testTree = Node 1 (Node 2 Leaf Leaf) (Node 3 (Node 4 Leaf Leaf) Leaf)
+
+-- 2.a
+treeFilter :: (a -> Bool) -> Tree a -> Tree a
+treeFilter f Leaf = Leaf
+treeFilter f (Node x lt rt)
+  | f x       = Node x (treeFilter f lt) (treeFilter f rt)
+  | otherwise = Leaf
+
+-- 2.b
+levelMap :: (Int -> a -> b) -> Tree a -> Tree b
+levelMap f n = levelMap' f 0 n
+  where levelMap' _ _ Leaf             = Leaf
+        levelMap' f lvl (Node x lt rt) =
+           Node (f lvl x) (levelMap' f (lvl + 1) lt) (levelMap' f (lvl + 1) rt)
+
+-- 2.c
+equalTrees :: Eq a => Tree a -> Tree a -> Bool
+equalTrees Leaf Leaf = True
+equalTrees _ Leaf = False
+equalTrees Leaf _ = False
+equalTrees (Node x1 lt1 rt1) (Node x2 lt2 rt2)
+  | x1 /= x2  = False
+  | otherwise = (equalTrees lt1 lt2) && (equalTrees rt1 rt2)
+
+isSubtree :: Eq a => Tree a -> Tree a -> Bool
+isSubtree Leaf Leaf = True
+isSubtree _ Leaf = False
+isSubtree t1 t2@(Node _ lt rt) = (equalTrees t1 t2) || (isSubtree t1 lt) || (isSubtree t1 rt)
+
+-- 3
+data Pred = And Pred Pred | Or Pred Pred | Not Pred | Val Bool deriving Show
+
+expr = And (Or (Val True) (Not (Val True))) (Not (And (Val True) (Val False)))
+
+eval :: Pred -> Bool
+eval (Val x)   = x
+eval (Not x)   = not (eval x)
+eval (And x y) = (eval x) && (eval y)
+eval (Or x y)  = (eval x) || (eval y)
+
 -- 4.a
 sortTracks :: [String] -> [String]
 sortTracks = sortBy (\x y -> (findNumber x) `compare` (findNumber y))
